@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rođendanska tabela poena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Rubik:wght@400;500;700&display=swap">
+<style>
+/* Layout: game-show scoreboard — team totals on top, then tabs: tournament grid by game / quiz counter */
+:root{
+  --bg:#12101a; --panel:#1d1a29; --panel2:#262236; --line:#3a3550; --fg:#f4f1ff; --muted:#a39fba;
+  --t1:#ff3b4e; --t1d:#a3101f;
+  --t2:#2f8cff; --t2d:#0f4ea8;
+  --t3:#21d37a; --t3d:#0c7a43;
+  --gold:#ffc83d; --bad:#ff6b6b;
+  --display:"Bowlby One","Arial Black",Impact,sans-serif;
+  --body:"Rubik",system-ui,-apple-system,sans-serif;
+  color-scheme:dark;
+}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent}
+.wrap{max-width:820px;margin:0 auto;padding-block:20px 48px;display:grid;gap:20px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,6vw,40px);margin:0;letter-spacing:.02em}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.muted{color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+
+/* totals */
+.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tot{background:var(--panel);border-radius:16px;padding:14px 12px 12px;border-top:6px solid var(--c);display:grid;gap:4px;min-width:0;position:relative}
+.tot input{background:transparent;border:0;border-bottom:1px dashed var(--line);color:var(--c);font:700 15px var(--body);width:100%;padding:2px 0;min-width:0}
+.tot .pts{font-family:var(--display);font-size:clamp(34px,9vw,52px);line-height:1;font-variant-numeric:tabular-nums}
+.tot .rank{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tot.lead .rank{color:var(--gold)}
+.tot.lead{box-shadow:0 0 0 2px var(--gold) inset}
+
+/* tabs */
+.tabs{display:flex;gap:6px;background:var(--panel);padding:5px;border-radius:999px;width:fit-content;max-width:100%}
+.tab{border:0;background:transparent;padding:9px 18px;border-radius:999px;font-weight:500;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--fg);color:var(--bg)}
+
+/* tournament */
+.games{display:grid;gap:10px}
+.game{background:var(--panel);border-radius:14px;padding:12px 14px;display:grid;gap:10px}
+.ghead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.gname{font-weight:700;font-size:16px}
+.chip{font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--panel2);color:var(--muted)}
+.chip.x2{background:color-mix(in srgb,var(--gold) 20%,transparent);color:var(--gold)}
+.grow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tcell{display:grid;gap:6px;min-width:0}
+.tlabel{font-size:12px;font-weight:700;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.places{display:flex;gap:4px}
+.pl{flex:1;border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:8px 0;font-weight:700;font-variant-numeric:tabular-nums;min-width:0}
+.pl[aria-pressed="true"]{background:var(--c);border-color:var(--c);color:#fff}
+.tfoot{display:flex;justify-content:space-between;align-items:center;gap:4px;font-size:13px}
+.jk{border:1px solid var(--line);background:transparent;border-radius:999px;padding:3px 9px;font-size:12px;color:var(--muted)}
+.jk[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#241a00;font-weight:700}
+.jk:disabled{opacity:.3;cursor:not-allowed}
+.gp{font-variant-numeric:tabular-nums;font-weight:700}
+
+/* quiz */
+.quiz{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.qcard{background:var(--panel);border-radius:16px;padding:14px;display:grid;gap:10px;border-top:6px solid var(--c);min-width:0;align-content:start}
+.qname{font-weight:700;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qpts{font-family:var(--display);font-size:clamp(30px,8vw,44px);line-height:1;font-variant-numeric:tabular-nums}
+.qbtns{display:grid;gap:6px}
+.qb{border:0;border-radius:10px;padding:12px 0;font-weight:700;font-size:16px;background:var(--c);color:#fff;box-shadow:0 3px 0 var(--d)}
+.qb:active{transform:translateY(2px);box-shadow:0 1px 0 var(--d)}
+.qb.minus{background:var(--panel2);color:var(--bad);box-shadow:0 3px 0 #000}
+.din{border:1px dashed var(--gold);background:transparent;color:var(--gold);border-radius:10px;padding:9px 0;font-size:13px;font-weight:700}
+.din[aria-pressed="true"]{background:var(--gold);color:#241a00;border-style:solid}
+.din:disabled{opacity:.35;border-color:var(--line);color:var(--muted);cursor:not-allowed}
+.armed{font-size:12px;color:var(--gold);text-align:center;min-height:1.2em}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:10px 16px;font-weight:500}
+.btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.danger{color:var(--bad)}
+.note{font-size:13px;color:var(--muted);margin:0;max-width:62ch;line-height:1.5}
+.confirm{background:var(--panel2);border:1px solid var(--bad);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+
+@media (max-width:520px){
+  .quiz,.grow{grid-template-columns:1fr}
+  .tcell{grid-template-columns:auto 1fr;align-items:center;column-gap:10px}
+  .tcell .tfoot{grid-column:1/-1}
+  .tlabel{min-width:70px}
+  .totals{gap:6px}.tot{padding:10px 8px}
+}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top">
+    <h1>Tabela poena</h1>
+    <span class="muted" id="progress"></span>
+  </div>
+
+  <div class="totals" id="totals"></div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-turnir" aria-selected="true">Turnir</button>
+    <button class="tab" role="tab" id="tab-kviz" aria-selected="false">Kviz</button>
+    <button class="tab" role="tab" id="tab-pesme" aria-selected="false">Pesme</button>
+  </div>
+
+  <section id="view-turnir">
+    <div class="games" id="games"></div>
+  </section>
+
+  <section id="view-kviz" hidden>
+    <div class="quiz" id="quiz"></div>
+    <div class="armed" id="dinmsg"></div>
+    <div class="bar">
+      <button class="btn" id="undo">↶ Poništi poslednje</button>
+      <button class="btn primary" id="toTurnir">Upiši kviz u turnir</button>
+    </div>
+    <p class="note">Laka pitanja +1, srednja +2, teška +3. Na kraju „Upiši kviz u turnir" daje 3, 2 i 1 turnirski poen po plasmanu.</p>
+  </section>
+
+  <section id="view-pesme" hidden>
+    <div class="quiz" id="songs"></div>
+    <div class="bar">
+      <button class="btn" id="undoS">↶ Poništi poslednje</button>
+      <button class="btn primary" id="toTurnirS">Upiši pesme u turnir</button>
+    </div>
+    <p class="note">Tačan naziv pesme +1, tačan izvođač +1. Na kraju „Upiši pesme u turnir“ daje 3, 2 i 1 turnirski poen po plasmanu.</p>
+  </section>
+
+  <div class="bar">
+    <button class="btn danger" id="reset">Obriši sve poene</button>
+    <div class="confirm" id="confirm" hidden>
+      <span>Sigurno brišeš sve poene i imena?</span>
+      <button class="btn danger" id="yes">Da, obriši</button>
+      <button class="btn" id="no">Odustani</button>
+    </div>
+  </div>
+  <p class="note">Plasman za igru: tapni 1., 2. ili 3. za svaki tim (1. = 3 poena, 2. = 2, 3. = 1). Nerešeno: daj istim timovima isto mesto. Džoker duplira poene timu u toj igri i svaki tim ga ima samo jednom. Finale se automatski računa duplo i u njemu nema džokera. Imena timova menjaš tapom na ime gore. Sve se čuva na ovom telefonu.</p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const GAMES=[
+ {id:'kviz',name:'Kviz opšteg znanja',type:'Tim'},
+ {id:'song',name:'Guess the song',type:'Tim'},
+ {id:'alias',name:'3 stvari za 5 sekundi',type:'Duel'},
+ {id:'karaoke',name:'Karaoke',type:'Duel'},
+ {id:'minute',name:'Whisper challenge',type:'Duel'},
+ {id:'panto',name:'Pantomima',type:'Duel'},
+ {id:'dane',name:'Ko sam ja',type:'Duel'},
+ {id:'laugh',name:'Try not to laugh',type:'Tim'},
+ {id:'beer',name:'Finale: Beer pong',type:'Tim',x2:true}
+];
+const COL=[['--t1','--t1d'],['--t2','--t2d'],['--t3','--t3d']];
+const KEY='rodjendan-poeni-v1';
+const fresh=()=>({names:['Tim 1','Tim 2','Tim 3'],place:{},joker:[null,null,null],quiz:[0,0,0],din:[0,0,0],hist:[],song:[0,0,0],shist:[]});
+let S=fresh();
+try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.names)S=Object.assign(fresh(),s)}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cv=i=>`--c:var(${COL[i][0]});--d:var(${COL[i][1]})`;
+const base=p=>({1:3,2:2,3:1}[p]||0);
+function gpts(g,i){const p=(S.place[g.id]||[])[i];return base(p)*(g.x2?2:1)*(S.joker[i]===g.id?2:1)}
+function total(i){return GAMES.reduce((a,g)=>a+gpts(g,i),0)}
+function ranks(vals){return vals.map(v=>1+vals.filter(w=>w>v).length)}
+
+function renderTotals(){
+  const t=[0,1,2].map(total),r=ranks(t),max=Math.max(...t);
+  document.getElementById('totals').innerHTML=[0,1,2].map(i=>`
+   <div class="tot ${max>0&&t[i]===max?'lead':''}" style="${cv(i)}">
+     <input id="name${i}" value="${esc(S.names[i])}" aria-label="Ime tima ${i+1}" maxlength="18">
+     <div class="pts">${t[i]}</div>
+     <div class="rank">${max>0?(r[i]===1?'🏆 vodi':r[i]+'. mesto'):'—'}</div>
+   </div>`).join('');
+  const done=GAMES.filter(g=>(S.place[g.id]||[]).some(Boolean)).length;
+  document.getElementById('progress').textContent=`Odigrano ${done} od ${GAMES.length} igara`;
+}
+function renderGames(){
+  document.getElementById('games').innerHTML=GAMES.map(g=>`
+   <div class="game">
+     <div class="ghead"><span class="gname">${g.name}</span>
+       <span><span class="chip">${g.type}</span>${g.x2?' <span class="chip x2">duplo</span>':''}</span></div>
+     <div class="grow">${[0,1,2].map(i=>{
+       const p=(S.place[g.id]||[])[i],jOn=S.joker[i]===g.id,jDis=S.joker[i]&&!jOn;
+       return `<div class="tcell" style="${cv(i)}">
+         <div class="tlabel">${esc(S.names[i])}</div>
+         <div class="places">${[1,2,3].map(n=>`<button class="pl" data-g="${g.id}" data-t="${i}" data-p="${n}" aria-pressed="${p===n}" aria-label="${esc(S.names[i])}, ${n}. mesto">${n}.</button>`).join('')}</div>
+         <div class="tfoot">${g.x2?'<span class="muted">bez džokera</span>':`<button class="jk" data-jg="${g.id}" data-t="${i}" aria-pressed="${jOn}" ${jDis?'disabled':''}>★ džoker</button>`}<span class="gp">${gpts(g,i)?'+'+gpts(g,i):''}</span></div>
+       </div>`}).join('')}</div>
+   </div>`).join('');
+}
+function renderQuiz(){
+  document.getElementById('quiz').innerHTML=[0,1,2].map(i=>{
+    const d=S.din[i];
+    return `<div class="qcard" style="${cv(i)}">
+      <div class="qname">${esc(S.names[i])}</div>
+      <div class="qpts">${S.quiz[i]}</div>
+      <div class="qbtns">
+        ${[1,2,3].map(n=>`<button class="qb" data-q="${i}" data-v="${n}">+${n}</button>`).join('')}
+      </div></div>`}).join('');
+
+}
+function renderSongs(){
+  document.getElementById('songs').innerHTML=[0,1,2].map(i=>`<div class="qcard" style="${cv(i)}">
+      <div class="qname">${esc(S.names[i])}</div>
+      <div class="qpts">${S.song[i]}</div>
+      <div class="qbtns">
+        <button class="qb" data-s="${i}" data-v="1">+1 naziv</button>
+        <button class="qb" data-s="${i}" data-v="1">+1 izvođač</button>
+      </div></div>`).join('');
+}
+function render(){renderTotals();renderGames();renderQuiz();renderSongs();save()}
+let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1600)}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.p){const g=b.dataset.g,i=+b.dataset.t,n=+b.dataset.p;
+    const a=S.place[g]=S.place[g]||[0,0,0];a[i]=a[i]===n?0:n;render();return}
+  if(b.dataset.jg){const g=b.dataset.jg,i=+b.dataset.t;S.joker[i]=S.joker[i]===g?null:g;render();return}
+  if(b.dataset.q!==undefined){const i=+b.dataset.q,v=+b.dataset.v;
+    const prevDin=S.din[i];S.quiz[i]+=v;if(prevDin===1)S.din[i]=2;
+    S.hist.push({i,v,prevDin});render();return}
+  if(b.dataset.s!==undefined){const i=+b.dataset.s,v=+b.dataset.v;S.song[i]+=v;S.shist.push({i,v});render();return}
+  if(b.dataset.dinArm!==undefined){const i=+b.dataset.dinArm;if(S.din[i]===2)return;S.din[i]=S.din[i]===1?0:1;render();return}
+});
+document.addEventListener('change',e=>{const m=e.target.id.match(/^name(\d)$/);if(m){S.names[+m[1]]=e.target.value.trim()||'Tim '+(+m[1]+1);render()}});
+document.getElementById('undo').onclick=()=>{const h=S.hist.pop();if(!h){toast('Nema šta da se poništi');return}
+  S.quiz[h.i]-=h.v;S.din[h.i]=h.prevDin;render();toast('Poništeno')};
+document.getElementById('toTurnir').onclick=()=>{
+  if(S.quiz.every(v=>v===0)){toast('Kviz još nema bodova');return}
+  S.place.kviz=ranks(S.quiz);render();toast('Kviz upisan u turnir');
+  show('turnir')};
+document.getElementById('undoS').onclick=()=>{const h=S.shist.pop();if(!h){toast('Nema šta da se poništi');return}S.song[h.i]-=h.v;render();toast('Poništeno')};
+document.getElementById('toTurnirS').onclick=()=>{
+  if(S.song.every(v=>v===0)){toast('Pesme još nemaju bodova');return}
+  S.place.song=ranks(S.song);render();toast('Pesme upisane u turnir');show('turnir')};
+document.getElementById('tab-pesme').onclick=()=>show('pesme');
+function show(v){['turnir','kviz','pesme'].forEach(k=>{document.getElementById('view-'+k).hidden=k!==v;document.getElementById('tab-'+k).setAttribute('aria-selected',k===v)})}
+document.getElementById('tab-turnir').onclick=()=>show('turnir');
+document.getElementById('tab-kviz').onclick=()=>show('kviz');
+document.getElementById('reset').onclick=()=>{document.getElementById('confirm').hidden=false};
+document.getElementById('no').onclick=()=>{document.getElementById('confirm').hidden=true};
+document.getElementById('yes').onclick=()=>{S=fresh();document.getElementById('confirm').hidden=true;render();toast('Sve obrisano')};
+render();
+</script>
+</body>
+</html>
